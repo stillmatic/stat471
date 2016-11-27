@@ -34,5 +34,5 @@ list_data <- function() {
 #' @examples
 #' load_data(sleep)
 load_data <- function(x) {
-    utils::data(x)
+    utils::data(paste(x))
 }

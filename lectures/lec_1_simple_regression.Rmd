@@ -1,0 +1,561 @@
+---
+title: "Lecture 1: Introduction"
+author: "Linda Zhao"
+date: "11/26/2016"
+output: beamer_presentation
+subtitle: STAT471/571/701 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+# Logistics
+
+## Todo: 
+
+Read: Chapter 2 and 3
+
+## Today:
+
+* Read data into R
+* Summary statistics
+* Displaying the data
+
+# Regression Overview
+
+* Model specification
+* LS estimates and properties
+* R-squared and RSE
+* Confidence intervals for coef.
+* Prediction intervals
+* Caution about reverse regression
+* Appendices	
+
+# Billion Dollar Billy Beane
+
+Read this [article](http://fivethirtyeight.com/features/billion-dollar-billy-beane/)
+
+* Is Billy Beane worth the predicted 12 million dollars? 
+* Will a team perform better when they are paid more?
+
+# Questions
+
+1. How does payroll relate to performance (`avgwin`)?
+2. Is Billy Beane worth 12 million dollars, as argued in the article?
+3. Given a team with $payroll= .84$, on average what would be the mean winning percentage and average wins? 
+
+# Packages in R
+
+R's greatest blessing (and curse) is its package ecosystem. (insert CRAN link here)
+
+We've developed a custom package for this class - install it if you haven't yet!
+
+```{r, eval = F}
+if(!require("devtools")) {
+    install.packages("devtools")
+}
+devtools::install_github("stillmatic/stat471utils")
+```
+
+# Our Data
+
+Data: `ml_pay`: consists of winning records and the payroll of all
+30 ML teams from 1998 to 2014. There are 162 games in each season.
+
+* `payroll`: total pay up to 2014 in billion dollars
+* `avgwin`: average winning percentage for the span of 1998 to 2014
+* `p2014`: total pay in 2014
+* `X2014`: number of games won in 2014. 
+* `X2014.pct`: percent of games won in 2014. We only need one of the two from above
+
+# Load the data
+
+Our custom tooling makes this easy for you:
+
+```{r, eval=T}
+library(stat471)
+datapay <- stat471::ml_pay
+```
+
+Try `str(datapay)` now! \\ 
+You can also do `help(ml_pay)` to see the documentation
+
+# Getting help
+
+R has some good built-in help functions:
+
+```{r, eval = F}
+??read.csv      
+help(read.csv)  # The argument needs to be a function or dataset
+apropos("read")	# List all the functions with "read" as part of the function. Very useful!
+args(read.csv)  # List all the arguments to read.csv
+str(read.csv)
+```
+
+And of course, Google is your friend.
+
+# Understanding the data
+
+Before you do any analysis it is always wise to take a quick look at the data to spot anything abnormal.
+
+Find the structure the data and have a quick summary
+
+```{r, eval=F}
+class(datapay)  
+str(datapay) # make sure the variables are correctly defined.
+summary(datapay) # a quick summary of each variable
+```
+
+# Understanding the data
+
+Get a table view
+
+```{r}
+fix(datapay)     # need to close the window to move on
+View(datapay)
+```
+
+Look at the first six rows or first few rows
+
+```{r}
+head(datapay) # or tail(datapay)
+head(datapay, 2) # first two rows
+```
+
+# Understanding the data
+
+Find the size of the data or the numbers or rows and columns
+
+```{r}
+dim(datapay)
+```
+
+Get the variable names
+
+```{r}
+names(datapay) # It is a variable by itself
+```
+
+# Subsetting the data
+
+We often want to work with a subset which includes relevant variables:
+
+```{r}
+datapay[1,1] # payroll for team one
+datapay$payroll # call variable payroll
+datapay[, 1] # first colunm 
+datapay[, c(1:3)] # first three columns
+```
+
+Or update what the columns are named, e.g. rename "Team.name.2014" to "team"
+
+```{r, eval=T}
+names(datapay)[3]="team"
+```
+
+# Missing values
+
+In R, missing values are treated as "NA", a special type. This is how we can check:
+
+```{r, eval = T}
+sum(is.na(datapay)) 
+```
+
+Note that we cleaned this dataset beforehand!
+
+# Exploratory data analysis - stats
+
+We will concentrate on three variables: `payroll`, `avgwin` and `team` 
+
+```{r,eval=T}
+mean(datapay$payroll)
+sd(datapay$payroll)
+quantile(datapay$payroll)
+```
+
+Find the team name with the max payroll
+
+```{r, eval=T}
+datapay$team[which.max(datapay$payroll)] 
+```
+
+# Exploratory data analysis - plots
+
+```{r,eval=T}
+hist(datapay$payroll, breaks=5) 
+```
+
+# Exploratory data analysis - plots
+
+Larger number of classes to see the details
+
+```{r, eval=T}
+hist(datapay$payroll, breaks=10, col="blue") 
+```
+
+# Exploratory data analysis - plots
+
+```{r, eval=T}
+boxplot(datapay$payroll)
+```
+
+# Exploratory data analysis - plots
+
+Explore the relationship between payroll (x) and avgwin (y), with a scatter plot. 
+
+```{r, eval = T, echo = F}
+plot(datapay$payroll, datapay$avgwin, pch=16, cex=1.2,
+     col="blue",
+     xlab="Payroll", ylab="Win Percentage",
+     main="MLB Teams's Overall Win Percentage vs. Payroll")
+identify(datapay$payroll, datapay$avgwin, labels=datapay$team, pos=3) # label some points
+text(datapay$payroll, datapay$avgwin, labels=datapay$team, cex= .7, pos=1) # label all points
+```
+
+```{r, echo = F, eval = F}
+# alternate ggplot2 implementation:
+library(ggplot2)
+ggplot(data = datapay, aes(x = payroll, y = avgwin, label = team)) + 
+    geom_label(label.size = 0.1, label.padding = unit(0.1, "lines")) +
+    theme_bw() + ggtitle("MLB Teams's Overall Win Percentage vs. Payroll") +
+    xlab("Payroll") + ylab("Win Percentage")
+```
+
+# Linear models
+
+We fit linear regressions in R with the following syntax:
+
+```{r, eval = T}
+myfit0 <- lm(avgwin~payroll, data=datapay)    # avgwin is y and payroll is x
+```
+
+# Linear models - evaluating
+
+```{r}
+names(myfit0)# it outputs many statistics
+str(myfit0) # myfit0 is a list
+
+summary(myfit0)   # it is another object that is often used
+results <- summary(myfit0)
+names(results) 
+str(results)
+```
+
+# Linear models - plotting
+
+Scatter plot with the LS line added
+
+```{r, echo = F, eval = T}
+par(mgp = c(1.8, .5, 0), mar = c(3, 3, 2, 1)) 
+  plot(datapay$payroll, datapay$avgwin, pch = 16, 
+       xlab = "Payroll", ylab = "Win Percentage",
+       main = "MLB Teams's Overall Win Percentage vs. Payroll")
+  abline(myfit0, col = "red", lwd = 4)         # many other ways. 
+  abline(h = mean(datapay$avgwin), lwd=5, col="blue") # add a horizontal line, y=mean(y)
+  identify(datapay$payroll, datapay$avgwin, labels=datapay$team, cex= .7, pos=1) 
+```
+
+# Your thoughts
+
+Here is how the article concludes that Beane is worth as much as the GM in Red Sox.
+
+By looking at the above plot, Oakland A's win pct is more or less same as that of Red Sox, so based
+on the LS equation, the team should have paid 2 billion.
+
+### Do you agree?
+
+# Linear models - mathematical evaluation
+
+RSS and RSE:
+
+```{r}
+myfit0 <- lm(avgwin~payroll, data=datapay)
+RSS <- sum((myfit0$res)^2) # residual sum of squares
+RSE <- sqrt(RSS/myfit0$df) # residual standard error
+TSS <-sum((datapay$avgwin-mean(datapay$avgwin))^2) # total sum of sqs
+Rsquare <- (TSS-RSS)/TSS    # Percentage reduction of the total errors
+
+Rsquare <- (cor(datapay$avgwin, myfit0$fitt))^2 # Square of the cor between response and fitted values
+```
+
+We can also get these results from the summary output
+
+```{r}
+RSE=summary(myfit0)$sigma
+Rsquare=summary(myfit0)$r.squared
+```
+
+# Inference
+
+Under the model assumptions:
+
+i. $y_i$ is i.i.d, and normally distributed
+ii. the mean of $y$ given $x$ is linear
+iii. the var of $y$ does not depend on $x$
+
+THEN we have nice properties about the LS estimates $b_1$, $b_0$. 
+
+* t intervals and t tests for beta's
+* use RSE to estimate the true sigma.
+
+# Subset analysis
+
+```{r, eval=T}
+data1=datapay[, -(21:37)] # take X1998 to X2014 out
+data2=data1[, sort(names(data1)[21-37])] # sort the col names
+names(data2)
+```
+
+# Confidence intervals
+
+```{r}
+summary(myfit0)  # Tests and CI for the coefficients
+confint(myfit0)  # Pull out the CI for the coefficients
+```
+
+Create new data, and feed it to our trained model, to find a 95% CI:
+
+```{r}
+new_team <- data.frame(payroll=c(.841))  
+CImean <- predict(myfit0, new_team, interval="confidence", se.fit=TRUE)  
+```
+
+# Prediction intervals
+
+```{r}
+CIpred <- predict(myfit0, new_team, interval="prediction", se.fit=TRUE)
+CIpred
+```
+
+A 95 prediction interval varies from 0.474 to 0.531, for a team like the Oakland A's. 
+
+But their `avewin` is 0.5445, and somewhat outside of this interval ... 
+
+# Prediction intervals - 99%
+
+A 99% prediction interval would contain .5445!
+
+```{r}
+CIpred_99 <- predict(myfit0, new_team, interval="prediction", se.fit=TRUE, level=.99)
+CIpred_99
+```
+
+# Reverse Regression
+
+Recall this scatterplot:
+
+```{r, eval = T, echo = F}
+par(mgp=c(1.8,.5,0), mar=c(3,3,2,1)) 
+plot(datapay$payroll, datapay$avgwin, pch=16, 
+     xlab="Payroll", ylab="Win Percentage",
+     main="MLB Teams's Overall Win Percentage vs. Payroll")
+abline(lm(avgwin~payroll, data=datapay), col="red", lwd=4) 
+```
+
+# Reverse Regression
+
+Add LS line:
+
+```{r, eval = T, echo = F}
+plot(datapay$payroll, datapay$avgwin, pch=16, 
+     xlab="Payroll", ylab="Win Percentage",
+     main="MLB Teams's Overall Win Percentage vs. Payroll")
+abline(lm(avgwin~payroll, data=datapay), col="red", lwd=4) 
+myfit1 <- lm(payroll~avgwin, data=datapay)
+#summary(myfit1)
+beta0 <- myfit1$coefficients[1]
+beta1 <- myfit1$coefficients[2]
+avgwin2 <- (datapay$payroll-beta0)/beta1   
+lines(datapay$payroll, avgwin2, col="green", lwd=4)
+
+legend("bottomright", legend=c("y=winpercent", "y=payroll"),
+       lty=c(1,1), lwd=c(2,2), col=c("red","green"))
+
+text(datapay$payroll, datapay$avgwin, labels=datapay$team, cex= 0.7, pos=2) # label teams
+```
+
+# Reverse Regression
+
+We may want to get the LS equation w/o Oakland first. 
+
+Scatter plot with both LS lines
+
+```{r, eval = T, echo = F}
+subdata <- datapay[-20,]
+
+myfit2 <- lm(avgwin~payroll, data=subdata)
+#summary(myfit2)
+plot(subdata$payroll, subdata$avgwin, pch=16,
+     xlab="Payroll", ylab="Win Percentage",
+     main="The effect of Oakland")
+lines(subdata$payroll, predict(myfit2), col="blue", lwd=3)
+abline(myfit0, col="red", lwd=3)
+legend("bottomright", legend=c("Reg. with Oakland", "Reg. w/o Oakland"),
+       lty=c(1,1), lwd=c(2,2), col=c("red","blue"))
+
+```
+
+# Reverse Regression
+
+```{r}
+subdata1 <- datapay[-19,]
+myfit3 <- lm(avgwin~payroll, data=subdata1)
+summary(myfit3)
+
+plot(subdata$payroll, subdata$avgwin, pch=16,
+     xlab="Payroll", ylab="Win Percentage",
+     main="The effect of Yankees")
+abline(myfit3, col="blue", lwd=3)	
+abline(myfit0, col="red", lwd=3)
+legend("bottomright", legend=c("Reg. All", "Reg. w/o Yankees"),
+       lty=c(1,1), lwd=c(2,2), col=c("red","blue"))
+```
+
+# End
+
+# Appendix 1: z vs t
+
+Difference between $z$ and $t$ with $df=n$. The distribution of $z$ is similar to that $t$ when $df$ is large, say 30.
+
+```{r, eval = T, echo = F}
+par(mfrow=c(2,1))
+z=rnorm(1000)   
+par(mgp=c(1.8,.5,0), mar=c(3,3,2,1)) 
+hist(z, freq=FALSE, col="red", breaks=30, xlim=c(-5,5))
+```
+
+# Appendix 1
+
+```{r, eval = T, echo = F}
+df=30
+t=rt(1000, df)   # see what a t variable looks like
+hist(t, freq=FALSE, col="blue", breaks=50, xlim=c(-5,5),
+     main=paste("Hist of t with df=",df))
+
+```
+
+# Appendix 2: R-squared
+
+Case I: a perfect model between X and Y but it is not linear
+
+R-squared=.837  here y=x^3 with no noise!  
+
+```{r, eval = T, echo=F}
+dev.new()
+par(mfrow=c(3, 1))
+
+x=seq(0, 3, by=.05) # or x=seq(0, 3, length.out=61)
+y=x^3 
+
+myfit=lm(y~x)
+myfit.out=summary(myfit)
+rsquared=myfit.out$r.squared
+
+par(mgp=c(1.8,.5,0), mar=c(3,3,2,1)) 
+plot(x, y, pch=16, ylab="",
+     xlab="No noise in the data",
+     main=paste("R squared= ",round(rsquared,3),sep=""))
+abline(myfit, col="red", lwd=4)
+```
+
+# Appendix 2
+
+Case II: a perfect linear model between X and Y but with noise.
+
+Here $y= 2+3x + \epsilon$, $\epsilon$ is iid $N(0, \sigma=9)$. 
+
+```{r, eval = T, echo = F}
+x=seq(0, 3, by=.02)
+e=3* rnorm(length(x))   # Normal random errors with mean 0 and sigma=3
+y= 2+3*x + 3* rnorm(length(x)) 
+
+myfit=lm(y~x)
+myfit.out=summary(myfit)
+rsquared = round(myfit.out$r.squared,3)
+hat_beta_0=round(myfit$coe[1], 2)
+hat_beta_1=round(myfit$coe[2], 2)
+par(mgp=c(1.8,.5,0), mar=c(3,3,2,1)) 
+plot(x, y, pch=16, ylab="",
+     xlab="True lindear model with errors", 
+     main=paste("R squared= ",rsquared, 
+                "LS est's=",hat_beta_0, "and", hat_beta_1))
+
+abline(myfit, col="red", lwd=4)
+```
+
+# Appendix 2
+
+Case III: Same as that in Case II, but lower the sigma ($\sigma$) to 1
+
+```{r, eval = T, echo = F}
+x=seq(0, 3, by=.02)
+e=3* rnorm(length(x))   # Normal random errors with mean 0 and sigma=3
+y= 2+3*x + 1* rnorm(length(x)) 
+
+myfit=lm(y~x)
+myfit.out=summary(myfit)
+rsquared = round(myfit.out$r.squared,3)
+b1=round(myfit.out$coe[2], 3)
+par(mgp=c(1.8,.5,0), mar=c(3,3,2,1)) 
+plot(x, y, pch=16, ylab="",
+     xlab=paste("LS estimates, b1=", b1, ",  R squared= ", rsquared),
+     main="The true model is y=2+3x+n(0,1)")
+abline(myfit, col="red", lwd=4)
+```
+
+# Appendix 3
+
+What do we expect to see even all the model assumptions are met?
+
+a. Variability of the LS estimates $\beta$'s
+b. Variability of the $R^2$
+c. Model diagnosis: through residuals 
+
+We answer this through simulation
+
+# Appendix 3
+
+```{r, eval = T, echo = F}
+par(mfrow=c(1,3)) # make three plot windows: 1 row and three columns
+### Set up the simulations
+x=runif(100)      # generate 100 random numbers from [0, 1]
+y=1+2*x+rnorm(100,0, 2) # generate response y's 
+### The true line is y=1+2x, i.e., beta0=1, beta1=2, sigma=2
+
+fit=lm(y~x)
+fit.perfect=summary(lm(y~x))
+rsquared=round(fit.perfect$r.squared,2)
+hat_beta_0=round(fit.perfect$coefficients[1], 2)
+hat_beta_1=round(fit.perfect$coefficients[2], 2)
+
+plot(x, y, pch=16, 
+     ylim=c(-8,8),
+     xlab="a perfect linear model: true mean: y=1+2x in blue, LS in red",
+     main=paste("R squared= ",rsquared, 
+                ", LS estimates b1=",hat_beta_1, "and b0=", hat_beta_0)
+    )
+abline(fit, lwd=4, col="red")
+lines(x, 1+2*x, lwd=4, col="blue")
+```
+
+# Appendix 3
+
+Residual plot:
+
+```{r, eval = T, echo = F}
+plot(fit$fitted, fit$residuals, pch=16,
+     ylim=c(-8, 8),
+     main="residual plot")
+abline(h=0, lwd=4, col="red")
+```
+
+# Appendix 3
+
+Check normality:
+
+```{r, eval = T, echo = F}
+qqnorm(fit$residuals, ylim=c(-8, 8))
+qqline(fit$residuals, lwd=4, col="blue")
+```
+
