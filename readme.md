@@ -41,3 +41,8 @@ This package provides a number of helper functions for Wharton's Modern Data Min
 * Move out of this repo
 * Should be done at some point...
 * Should also include better R intro
+
+### Homework
+
+* Add RMD template
+* Additional knitr tooling?

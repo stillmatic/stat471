@@ -1,5 +1,3 @@
-
-
 #' Prints available datasets
 #'
 #' @return outputs which datasets are loaded locally
@@ -21,18 +19,17 @@ list_data <- function() {
     paste(datasets_471)
 }
 
-#' Load a dataset
+#' Updates this package
 #'
-#' Simple wrapper around utills::data - students often will name their
-#' own datasets 'data' which can create collision problems.
+#' Installs package from source
 #'
-#' @param x dataset to load
+#' TODO: automate checks against Github version, autoupdate on load
 #'
-#' @return dataset
+#' @return updates package
 #' @export
 #'
 #' @examples
-#' load_data(sleep)
-load_data <- function(x) {
-    utils::data(paste(x))
+#' \dontrun{update_471}
+update_471 <- function() {
+    devtools::install_github("stillmatic/stat471")
 }

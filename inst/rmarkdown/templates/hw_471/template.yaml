@@ -1,0 +1,4 @@
+name: Homework Template
+description: >
+    Template for creating a Modern Data Mining homework assignment
+create_dir: true
