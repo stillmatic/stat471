@@ -2,4 +2,6 @@
 
 export(hw_471)
 export(list_data)
+export(tidy_ml_data)
 export(update_471)
+importFrom(magrittr,"%>%")

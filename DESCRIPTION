@@ -1,17 +1,20 @@
 Package: stat471
 Type: Package
-Title: Various utilities for STAT 471/571/701
+Title: Utilities for Wharton's Modern Data Mining 
 Version: 0.1.0
 Authors@R: c(
     person("Chris", "Hua", email = "chua@wharton.upenn.edu", role = c("aut", "cre"))
   )
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Data and utilities for Wharton's STAT 471/571/701.
+    Experimental educational package.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
+Imports:
+    dplyr
 Suggests:
-    testthat
+    testthat,
+    rcanvas
 URL: https://github.com/stillmatic/471_utils
 BugReports: https://github.com/stillmatic/471_utils/issues
 RoxygenNote: 5.0.1

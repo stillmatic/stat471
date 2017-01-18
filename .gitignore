@@ -1,5 +1,6 @@
 # custom
-.DS_Store
+.DS_Store       
+data-raw/      
 
 # History files
 .Rhistory
@@ -35,5 +36,4 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 
-data-raw/
 .Rproj.user

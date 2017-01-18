@@ -4,8 +4,8 @@
 \alias{hw_471}
 \title{STAT471 Homework Format}
 \usage{
-hw_471(documentclass = c("tufte-handout", "tufte-book"), fig_width = 4,
-  fig_height = 2.5, fig_crop = TRUE, dev = "pdf", highlight = "default",
+hw_471(documentclass = "hw_471", fig_width = 4, fig_height = 2.5,
+  fig_crop = TRUE, dev = "pdf", highlight = "default",
   template = template_resources("hw_471", "template.tex"), ...)
 }
 \arguments{

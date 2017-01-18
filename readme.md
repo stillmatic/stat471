@@ -44,5 +44,5 @@ This package provides a number of helper functions for Wharton's Modern Data Min
 
 ### Homework
 
-* Add RMD template
+* Add RMD template - mostly there
 * Additional knitr tooling?
